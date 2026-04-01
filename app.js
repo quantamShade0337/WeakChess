@@ -1,7 +1,6 @@
 import { Chess } from "./chess.js";
 
 const toast = document.getElementById("toast");
-const mascot = document.getElementById("sidebarMascot");
 const board = document.getElementById("chessboard");
 const mascotBubble = document.getElementById("mascotBubble");
 const engineStatus = document.getElementById("engineStatus");
@@ -40,19 +39,9 @@ function showToast(message) {
   }, 2200);
 }
 
-function setMascotMood(mood = "happy") {
-  mascot.classList.remove("mascot--happy", "mascot--cheer", "mascot--blink");
-  if (mood) mascot.classList.add(`mascot--${mood}`);
-  clearTimeout(setMascotMood.timer);
-  setMascotMood.timer = setTimeout(() => {
-    mascot.classList.remove("mascot--happy", "mascot--cheer", "mascot--blink");
-  }, 700);
-}
-
-function speak(message, mood = "happy") {
+function speak(message) {
   mascotBubble.querySelector("p").textContent = message;
   showToast(message);
-  setMascotMood(mood);
 }
 
 function updateDashboardStats() {
@@ -88,14 +77,14 @@ function clearSelection() {
 }
 
 function describeMove(move) {
-  if (move.san.includes("#")) return "Checkmate. That was the whole story.";
-  if (move.captured === "q") return "You took the queen. Milo is absolutely delighted.";
-  if (move.san.includes("+")) return "Check. Nice pressure on the king.";
-  if (move.flags.includes("k") || move.flags.includes("q")) return "Castling is a very grown-up cozy move.";
-  if (move.piece === "p" && ["e4", "d4", "e5", "d5"].includes(move.to)) return "Strong center move. Clean and confident.";
-  if (move.piece === "n" || move.piece === "b") return "Nice development. Your pieces are waking up.";
-  if (move.captured) return "Good capture. You picked up material neatly.";
-  return "Good move. Calm, tidy, and purposeful.";
+  if (move.san.includes("#")) return "Checkmate.";
+  if (move.captured === "q") return "Queen won.";
+  if (move.san.includes("+")) return "Check.";
+  if (move.flags.includes("k") || move.flags.includes("q")) return "Castle.";
+  if (move.piece === "p" && ["e4", "d4", "e5", "d5"].includes(move.to)) return "Strong center.";
+  if (move.piece === "n" || move.piece === "b") return "Good development.";
+  if (move.captured) return "Good capture.";
+  return "Good move.";
 }
 
 function updateInsight(lastMove = null) {
@@ -104,8 +93,8 @@ function updateInsight(lastMove = null) {
   if (game.in_checkmate()) {
     stateStat.textContent = "Mate";
     scorePill.textContent = "Mate";
-    insightTitle.textContent = "Game over";
-    insightBody.textContent = game.turn() === "w" ? "Black delivered mate." : "You delivered mate.";
+    insightTitle.textContent = "Over";
+    insightBody.textContent = game.turn() === "w" ? "Black mate." : "You mate.";
     tempoStat.textContent = "Final";
     focusStat.textContent = "King safety";
     return;
@@ -114,8 +103,8 @@ function updateInsight(lastMove = null) {
   if (game.in_check()) {
     stateStat.textContent = "Check";
     scorePill.textContent = "Sharp";
-    insightTitle.textContent = "King under pressure";
-    insightBody.textContent = "A checking move changes the whole temperature of the board.";
+    insightTitle.textContent = "Check";
+    insightBody.textContent = "King under pressure.";
     tempoStat.textContent = "Active";
     focusStat.textContent = "King";
     return;
@@ -124,8 +113,8 @@ function updateInsight(lastMove = null) {
   if (lastMove?.captured) {
     stateStat.textContent = "Tactical";
     scorePill.textContent = "Material";
-    insightTitle.textContent = "Material swing";
-    insightBody.textContent = lastMove.captured === "q" ? "Queen captures are huge emotional moments." : "A clean capture shifted the balance.";
+    insightTitle.textContent = "Material";
+    insightBody.textContent = lastMove.captured === "q" ? "Queen taken." : "Piece won.";
     tempoStat.textContent = "Direct";
     focusStat.textContent = "Material";
     return;
@@ -134,17 +123,17 @@ function updateInsight(lastMove = null) {
   if (game.history().length < 8) {
     stateStat.textContent = "Opening";
     scorePill.textContent = "Warm";
-    insightTitle.textContent = "Comfort opening";
-    insightBody.textContent = "Develop gently, touch the center, and keep the king safe.";
-    tempoStat.textContent = "Gentle";
+    insightTitle.textContent = "Opening";
+    insightBody.textContent = "Center. Develop. Castle.";
+    tempoStat.textContent = "Steady";
     focusStat.textContent = "Center";
     return;
   }
 
   stateStat.textContent = "Middlegame";
   scorePill.textContent = "Balanced";
-  insightTitle.textContent = "Friendly read";
-  insightBody.textContent = "Look for the next useful move before the flashy one.";
+  insightTitle.textContent = "Read";
+  insightBody.textContent = "Improve the next piece.";
   tempoStat.textContent = "Steady";
   focusStat.textContent = "Coordination";
 }
@@ -152,9 +141,9 @@ function updateInsight(lastMove = null) {
 function setActionAvailability() {
   const disabled = Boolean(pendingBotMove) || game.turn() !== "w" || game.game_over();
   makeMoveBtn.disabled = disabled;
-  if (pendingBotMove) makeMoveBtn.textContent = "Weak is thinking...";
+  if (pendingBotMove) makeMoveBtn.textContent = "Thinking...";
   else if (game.game_over()) makeMoveBtn.textContent = "Game finished";
-  else makeMoveBtn.textContent = "Play suggested move";
+  else makeMoveBtn.textContent = "Suggested move";
 }
 
 function buildBoard() {
@@ -241,9 +230,9 @@ function afterMove(move, byBot = false) {
     if (!byBot) greatMoves += 1;
     gamesPlayed += 1;
     updateDashboardStats();
-    engineStatus.textContent = byBot ? "Weak found mate" : "You found mate";
-    playerStatus.textContent = byBot ? "Take a breath and try again" : "That was beautiful";
-    speak(byBot ? "Checkmate. I know, that one stings a little. Want another go?" : "Checkmate. That was lovely. I am doing a tiny king dance.", "cheer");
+    engineStatus.textContent = byBot ? "Mate" : "Mate";
+    playerStatus.textContent = byBot ? "Lost" : "Won";
+    speak(byBot ? "Checkmate. Again?" : "Checkmate.");
     clearSelection();
     buildBoard();
     setActionAvailability();
@@ -253,9 +242,9 @@ function afterMove(move, byBot = false) {
   if (game.in_draw()) {
     gamesPlayed += 1;
     updateDashboardStats();
-    engineStatus.textContent = "Balanced ending";
-    playerStatus.textContent = "Drawn game";
-    speak("Draw. A calm finish is still a finish worth taking.", "blink");
+    engineStatus.textContent = "Draw";
+    playerStatus.textContent = "Draw";
+    speak("Draw.");
     clearSelection();
     buildBoard();
     setActionAvailability();
@@ -267,15 +256,15 @@ function afterMove(move, byBot = false) {
       greatMoves += 1;
       updateDashboardStats();
     }
-    playerStatus.textContent = move.san.includes("+") ? "You gave check" : "Nice move";
-    engineStatus.textContent = "Weak is thinking";
-    speak(describeMove(move), move.captured === "q" || move.san.includes("#") ? "cheer" : "happy");
+    playerStatus.textContent = move.san.includes("+") ? "Check" : "Played";
+    engineStatus.textContent = "Thinking";
+    speak(describeMove(move));
   } else {
-    playerStatus.textContent = "Your move";
-    engineStatus.textContent = move.san.includes("+") ? "Weak gave check" : "Weak has moved";
-    if (move.san.includes("+")) speak("Weak gave check. Let's answer carefully.", "blink");
-    else if (move.captured === "q") speak("Weak grabbed the queen. We should recover calmly from here.", "blink");
-    else mascotBubble.querySelector("p").textContent = "Your turn. Look for the next clean move.";
+    playerStatus.textContent = "Move";
+    engineStatus.textContent = move.san.includes("+") ? "Check" : "Played";
+    if (move.san.includes("+")) speak("Check.");
+    else if (move.captured === "q") speak("Queen lost.");
+    else mascotBubble.querySelector("p").textContent = "Your move.";
   }
 
   buildBoard();
@@ -285,7 +274,7 @@ function afterMove(move, byBot = false) {
 function attemptMove(from, to) {
   const move = game.move({ from, to, promotion: "q" });
   if (!move) {
-    speak("That move doesn't work from here. Try one of the glowing squares.", "blink");
+    speak("That move doesn't work from here. Try one of the glowing squares.");
     return;
   }
   clearSelection();
@@ -323,9 +312,9 @@ function resetGame() {
   game.reset();
   clearSelection();
   updateInsight();
-  engineStatus.textContent = "Ready for a calm game";
-  playerStatus.textContent = "Your move";
-  mascotBubble.querySelector("p").textContent = "Tap a piece, then tap where you want it to go. I'll cheer when you find something nice.";
+  engineStatus.textContent = "Ready";
+  playerStatus.textContent = "Move";
+  mascotBubble.querySelector("p").textContent = "Tap. Move.";
   buildBoard();
   setActionAvailability();
 }
@@ -333,26 +322,26 @@ function resetGame() {
 document.getElementById("flipBoardBtn")?.addEventListener("click", () => {
   flipped = !flipped;
   buildBoard();
-  speak(flipped ? "Board flipped for a fresh angle." : "Board returned to your side.", "blink");
+  speak(flipped ? "Flipped." : "Reset view.");
 });
 
 document.getElementById("hintBtn")?.addEventListener("click", () => {
   const move = suggestedPlayerMove();
   if (!move) {
-    speak(game.game_over() ? "That game is finished. Start a new one and I'll help again." : "Hold on a beat. Let the current turn settle first.", "blink");
+    speak(game.game_over() ? "Game over." : "Wait.");
     return;
   }
   selectedSquare = move.from;
   legalTargets = [move.to];
   hintSquare = move.to;
   buildBoard();
-  speak(`Try ${move.san}. It looks like the tidiest move here.`, "cheer");
+  speak(`Try ${move.san}.`);
 });
 
 document.getElementById("makeMoveBtn")?.addEventListener("click", () => {
   const move = suggestedPlayerMove();
   if (!move) {
-    speak(game.game_over() ? "That game is already over. We can start fresh." : "Not your move right now. Weak is still thinking.", "blink");
+    speak(game.game_over() ? "Game over." : "Wait.");
     return;
   }
   attemptMove(move.from, move.to);
@@ -362,12 +351,12 @@ document.getElementById("newGameBtn")?.addEventListener("click", () => {
   gamesPlayed += 1;
   updateDashboardStats();
   resetGame();
-  speak("Fresh board. No pressure, just a clean start.", "blink");
+  speak("New game.");
 });
 
 document.getElementById("undoBtn")?.addEventListener("click", () => {
   if (!game.history().length) {
-    speak("Nothing to undo yet. We're still at the beginning.", "blink");
+    speak("Nothing to undo.");
     return;
   }
   if (pendingBotMove) {
@@ -380,16 +369,16 @@ document.getElementById("undoBtn")?.addEventListener("click", () => {
   updateInsight();
   buildBoard();
   setActionAvailability();
-  speak("Took that back. You can try the position again.", "blink");
+  speak("Undone.");
 });
 
 document.getElementById("analyzeBtn")?.addEventListener("click", () => {
   const move = suggestedPlayerMove();
   if (!move) {
-    speak(game.game_over() ? "The board is settled. Start a new game if you want another read." : "I'll give analysis once it's your move again.", "blink");
+    speak(game.game_over() ? "Game over." : "Wait.");
     return;
   }
-  speak(`A calm idea here is ${move.san}. It either improves pressure or keeps your king comfortable.`, "happy");
+  speak(`${move.san}.`);
 });
 
 updateDashboardStats();

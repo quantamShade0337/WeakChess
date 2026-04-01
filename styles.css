@@ -75,7 +75,7 @@ button {
 
 .topbar,
 .brand,
-.topbar-mascot,
+.topbar-note,
 .hero-metrics--two,
 .board-shell,
 .inline-actions,
@@ -90,7 +90,7 @@ button {
 }
 
 .brand,
-.topbar-mascot,
+.topbar-note,
 .engine-score {
   gap: var(--space-4);
 }
@@ -447,88 +447,6 @@ h3 {
   color: var(--accent-strong);
 }
 
-.mascot {
-  width: 74px;
-  height: 84px;
-  position: relative;
-  border-radius: 22px 22px 18px 18px;
-  background: linear-gradient(180deg, #fffaf3, #eed9be);
-  border: 2px solid rgba(98, 63, 38, 0.38);
-  box-shadow: 0 10px 22px rgba(98, 63, 38, 0.16);
-  transition: transform var(--standard) var(--ease);
-}
-
-.mascot::before {
-  content: "";
-  position: absolute;
-  top: -12px;
-  left: 18px;
-  width: 38px;
-  height: 18px;
-  border-radius: 6px 6px 2px 2px;
-  background: linear-gradient(180deg, #fff8ec, #f0dcc2);
-  border: 2px solid rgba(98, 63, 38, 0.38);
-}
-
-.mascot-crown {
-  position: absolute;
-  top: -20px;
-  left: 14px;
-  width: 46px;
-  height: 16px;
-  background: linear-gradient(180deg, #fff6ea, #efdbc0);
-  clip-path: polygon(0 100%, 10% 45%, 26% 100%, 40% 35%, 54% 100%, 72% 40%, 88% 100%, 100% 100%);
-  border-bottom: 2px solid rgba(98, 63, 38, 0.38);
-}
-
-.mascot-eyes {
-  position: absolute;
-  top: 28px;
-  left: 18px;
-  right: 18px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.mascot-eyes span {
-  width: 10px;
-  height: 14px;
-  border-radius: 999px;
-  background: #513722;
-}
-
-.mascot-mouth {
-  position: absolute;
-  left: 25px;
-  bottom: 18px;
-  width: 24px;
-  height: 12px;
-  border-bottom: 3px solid #6a4021;
-  border-radius: 0 0 16px 16px;
-}
-
-.mascot--happy {
-  animation: mascot-hop 520ms var(--ease);
-}
-
-.mascot--cheer .mascot-mouth {
-  height: 14px;
-  border: 3px solid #6a4021;
-  border-top: 0;
-  border-radius: 0 0 20px 20px;
-}
-
-.mascot--blink .mascot-eyes span {
-  height: 4px;
-  margin-top: 4px;
-}
-
-@keyframes mascot-hop {
-  0%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-10px) scale(1.02); }
-  60% { transform: translateY(0) scale(0.98); }
-}
-
 .toast {
   position: fixed;
   right: var(--space-6);
@@ -563,7 +481,7 @@ h3 {
     justify-content: stretch;
   }
 
-  .topbar-mascot,
+  .topbar-note,
   .hero-metrics--two {
     justify-content: flex-start;
   }

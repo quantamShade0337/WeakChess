@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weak Chess</title>
+  <title>ElectronChess</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,23 +15,15 @@
       <div class="brand">
         <div class="brand-mark">WK</div>
         <div>
-          <p class="eyebrow">Weak Chess</p>
-          <h1>Cozy chess for real people.</h1>
+          <p class="eyebrow">ElectronChess</p>
+          <h1>ElectronChess</h1>
         </div>
       </div>
 
-      <div class="topbar-mascot">
-        <div class="mascot mascot--idle" id="sidebarMascot" aria-hidden="true">
-          <div class="mascot-crown"></div>
-          <div class="mascot-eyes">
-            <span></span>
-            <span></span>
-          </div>
-          <div class="mascot-mouth"></div>
-        </div>
+      <div class="topbar-note">
         <div>
-          <p class="sidebar-label">King Milo</p>
-          <p class="muted">Your funny little king companion for good moves, clean captures, and calm restarts.</p>
+          <p class="sidebar-label">Feedback</p>
+          <p class="muted">Moves. Hints. Reactions.</p>
         </div>
       </div>
     </header>
@@ -40,8 +32,8 @@
       <section class="hero-card hero-card--compact">
         <div class="hero-copy">
           <p class="eyebrow">Dashboard</p>
-          <h2>Your warm chess corner.</h2>
-          <p class="muted">One focused space: see your progress, play a game, and get a suggested move when you want a gentle nudge.</p>
+          <h2>Play.</h2>
+          <p class="muted">Great moves. Games played. Board.</p>
         </div>
         <div class="hero-metrics hero-metrics--two">
           <div class="metric-card">
@@ -58,8 +50,8 @@
       <section class="card board-stage board-stage--single">
         <div class="section-head">
           <div>
-            <p class="sidebar-label">Game board</p>
-            <h3>Play against Weak</h3>
+            <p class="sidebar-label">Board</p>
+            <h3>Game</h3>
           </div>
           <div class="inline-actions">
             <button class="button button--ghost button--small" id="flipBoardBtn">Flip board</button>
@@ -70,43 +62,43 @@
         <div class="board-shell">
           <div class="board-frame">
             <div class="board-meta top">
-              <span>Weak</span>
-              <strong id="engineStatus">Ready for a calm game</strong>
+              <span>Engine</span>
+              <strong id="engineStatus">Ready</strong>
               <span id="engineClock">04:31</span>
             </div>
             <div class="chessboard" id="chessboard" aria-label="Chess board"></div>
             <div class="board-meta bottom">
               <span>You</span>
-              <strong id="playerStatus">Your move</strong>
+              <strong id="playerStatus">Move</strong>
               <span id="playerClock">07:42</span>
             </div>
           </div>
 
           <aside class="board-sidecard">
             <div class="mascot-bubble" id="mascotBubble">
-              <strong>King Milo</strong>
-              <p>Tap a piece, then tap where you want it to go. I’ll cheer when you find something nice.</p>
+              <strong>Feedback</strong>
+              <p>Tap. Move.</p>
             </div>
 
             <div class="card card--subtle insight-card">
               <div class="engine-score">
                 <span class="score-pill" id="scorePill">Balanced</span>
                 <div>
-                  <strong id="insightTitle">Friendly read</strong>
-                  <p class="muted" id="insightBody">Weak likes calm development and center control.</p>
+                  <strong id="insightTitle">Read</strong>
+                  <p class="muted" id="insightBody">Center first.</p>
                 </div>
               </div>
               <div class="stats-grid">
                 <div><span>Turn</span><strong id="turnStat">White</strong></div>
                 <div><span>State</span><strong id="stateStat">Opening</strong></div>
-                <div><span>Tempo</span><strong id="tempoStat">Gentle</strong></div>
+                <div><span>Tempo</span><strong id="tempoStat">Steady</strong></div>
                 <div><span>Focus</span><strong id="focusStat">Center</strong></div>
               </div>
             </div>
 
             <div class="board-controls board-controls--stack">
-              <button class="button button--primary" id="makeMoveBtn">Play suggested move</button>
-              <button class="button button--secondary" id="newGameBtn">New game</button>
+              <button class="button button--primary" id="makeMoveBtn">Suggested move</button>
+              <button class="button button--secondary" id="newGameBtn">New</button>
               <button class="button button--ghost" id="undoBtn">Undo</button>
               <button class="button button--ghost" id="analyzeBtn">Analyze</button>
             </div>
