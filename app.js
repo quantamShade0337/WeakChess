@@ -1,31 +1,21 @@
 import { Chess } from "./chess.js";
 
-const screenTitles = {
-  home: "Home",
-  play: "Play",
-  puzzles: "Puzzles",
-  review: "Review",
-  settings: "Settings",
-};
-
-const navLinks = [...document.querySelectorAll(".nav-link")];
-const screens = [...document.querySelectorAll(".screen")];
-const title = document.getElementById("screenTitle");
 const toast = document.getElementById("toast");
 const mascot = document.getElementById("sidebarMascot");
 const board = document.getElementById("chessboard");
-const moveList = document.getElementById("moveList");
 const mascotBubble = document.getElementById("mascotBubble");
 const engineStatus = document.getElementById("engineStatus");
 const playerStatus = document.getElementById("playerStatus");
 const scorePill = document.getElementById("scorePill");
 const insightTitle = document.getElementById("insightTitle");
 const insightBody = document.getElementById("insightBody");
-const positionText = document.getElementById("positionText");
 const turnStat = document.getElementById("turnStat");
 const stateStat = document.getElementById("stateStat");
 const tempoStat = document.getElementById("tempoStat");
 const focusStat = document.getElementById("focusStat");
+const greatMovesStat = document.getElementById("greatMovesStat");
+const gamesPlayedStat = document.getElementById("gamesPlayedStat");
+const makeMoveBtn = document.getElementById("makeMoveBtn");
 
 const game = new Chess();
 const pieceMap = {
@@ -38,14 +28,8 @@ let legalTargets = [];
 let flipped = false;
 let hintSquare = null;
 let pendingBotMove = null;
-
-const topContinueBtn = document.getElementById("continueTopBtn");
-const continueGameBtn = document.getElementById("continueGameBtn");
-const dailyPuzzleBtn = document.getElementById("dailyPuzzleBtn");
-const nudgeBtn = document.getElementById("nudgeBtn");
-const reviewReplayBtn = document.getElementById("reviewReplayBtn");
-const reviewEndgameBtn = document.getElementById("reviewEndgameBtn");
-const makeMoveBtn = document.getElementById("makeMoveBtn");
+let greatMoves = 4;
+let gamesPlayed = 12;
 
 function showToast(message) {
   toast.textContent = message;
@@ -71,40 +55,9 @@ function speak(message, mood = "happy") {
   setMascotMood(mood);
 }
 
-function switchScreen(screenId) {
-  navLinks.forEach((link) => {
-    link.classList.toggle("is-active", link.dataset.screen === screenId);
-  });
-  screens.forEach((screen) => {
-    screen.classList.toggle("is-active", screen.dataset.screenPanel === screenId);
-  });
-  title.textContent = screenTitles[screenId];
-}
-
-function goToScreen(screenId) {
-  switchScreen(screenId);
-  setMascotMood("blink");
-}
-
-navLinks.forEach((link) => {
-  link.addEventListener("click", () => {
-    switchScreen(link.dataset.screen);
-    setMascotMood("blink");
-  });
-});
-
-function squareName(row, col) {
-  const file = "abcdefgh"[col];
-  const rank = 8 - row;
-  return `${file}${rank}`;
-}
-
-function fileToCol(file) {
-  return "abcdefgh".indexOf(file);
-}
-
-function rankToRow(rank) {
-  return 8 - Number(rank);
+function updateDashboardStats() {
+  greatMovesStat.textContent = String(greatMoves);
+  gamesPlayedStat.textContent = String(gamesPlayed);
 }
 
 function currentBoardMatrix() {
@@ -116,6 +69,22 @@ function currentBoardMatrix() {
     });
   });
   return matrix;
+}
+
+function squareName(row, col) {
+  const file = "abcdefgh"[col];
+  const rank = 8 - row;
+  return `${file}${rank}`;
+}
+
+function legalMovesFrom(square) {
+  return game.moves({ square, verbose: true });
+}
+
+function clearSelection() {
+  selectedSquare = null;
+  legalTargets = [];
+  hintSquare = null;
 }
 
 function describeMove(move) {
@@ -131,7 +100,6 @@ function describeMove(move) {
 
 function updateInsight(lastMove = null) {
   turnStat.textContent = game.turn() === "w" ? "White" : "Black";
-  positionText.textContent = game.history().length ? game.pgn({ max_width: 120, newline_char: " " }) : "Start position";
 
   if (game.in_checkmate()) {
     stateStat.textContent = "Mate";
@@ -181,42 +149,15 @@ function updateInsight(lastMove = null) {
   focusStat.textContent = "Coordination";
 }
 
-function updateMoveList() {
-  moveList.innerHTML = "";
-  const history = game.history();
-  if (!history.length) {
-    const empty = document.createElement("p");
-    empty.className = "muted";
-    empty.textContent = "No moves yet. Open with something simple.";
-    moveList.appendChild(empty);
-    return;
-  }
-
-  for (let i = 0; i < history.length; i += 2) {
-    const row = document.createElement("div");
-    row.className = "move-row";
-    if (i >= history.length - 2) row.classList.add("is-current");
-    row.innerHTML = `
-      <span>${Math.floor(i / 2) + 1}.</span>
-      <button type="button" disabled>${history[i] ?? ""}</button>
-      <button type="button" disabled>${history[i + 1] ?? ""}</button>
-    `;
-    moveList.appendChild(row);
-  }
-}
-
-function legalMovesFrom(square) {
-  return game.moves({ square, verbose: true });
-}
-
-function clearSelection() {
-  selectedSquare = null;
-  legalTargets = [];
-  hintSquare = null;
+function setActionAvailability() {
+  const disabled = Boolean(pendingBotMove) || game.turn() !== "w" || game.game_over();
+  makeMoveBtn.disabled = disabled;
+  if (pendingBotMove) makeMoveBtn.textContent = "Weak is thinking...";
+  else if (game.game_over()) makeMoveBtn.textContent = "Game finished";
+  else makeMoveBtn.textContent = "Play suggested move";
 }
 
 function buildBoard() {
-  if (!board) return;
   board.innerHTML = "";
   const matrix = currentBoardMatrix();
   const rows = flipped ? [...matrix].reverse() : matrix;
@@ -226,13 +167,13 @@ function buildBoard() {
     cols.forEach((piece, colIndex) => {
       const originalRow = flipped ? 7 - rowIndex : rowIndex;
       const originalCol = flipped ? 7 - colIndex : colIndex;
-      const square = document.createElement("button");
       const name = squareName(originalRow, originalCol);
       const isLight = (rowIndex + colIndex) % 2 === 0;
-
+      const square = document.createElement("button");
       square.className = `square ${isLight ? "square--light" : "square--dark"}`;
-      square.setAttribute("aria-label", `Square ${name}`);
       square.type = "button";
+      square.setAttribute("aria-label", `Square ${name}`);
+
       if (game.turn() !== "w" || pendingBotMove) square.disabled = true;
 
       const history = game.history({ verbose: true });
@@ -243,7 +184,6 @@ function buildBoard() {
       if (name === hintSquare) square.classList.add("square--hint");
 
       const pieceAtSquare = game.get(name);
-
       if (piece) {
         if (pieceAtSquare?.color === "w" && game.turn() === "w" && !pendingBotMove) {
           square.classList.add("square--piece");
@@ -256,19 +196,16 @@ function buildBoard() {
 
       square.addEventListener("click", () => {
         if (pendingBotMove || game.turn() !== "w") return;
-
         if (selectedSquare && legalTargets.includes(name)) {
           attemptMove(selectedSquare, name);
           return;
         }
-
         if (pieceAtSquare?.color === "w") {
           selectedSquare = name;
           legalTargets = legalMovesFrom(name).map((move) => move.to);
           buildBoard();
           return;
         }
-
         clearSelection();
         buildBoard();
       });
@@ -281,7 +218,6 @@ function buildBoard() {
 function chooseBotMove() {
   const moves = game.moves({ verbose: true });
   if (!moves.length) return null;
-
   const pieceValues = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 };
   const scored = moves.map((move) => {
     let score = 0;
@@ -294,61 +230,64 @@ function chooseBotMove() {
     score += Math.random() * 2;
     return { move, score };
   });
-
   scored.sort((a, b) => b.score - a.score);
   return scored[0].move;
 }
 
 function afterMove(move, byBot = false) {
-  updateMoveList();
   updateInsight(move);
 
   if (game.in_checkmate()) {
+    if (!byBot) greatMoves += 1;
+    gamesPlayed += 1;
+    updateDashboardStats();
     engineStatus.textContent = byBot ? "Weak found mate" : "You found mate";
     playerStatus.textContent = byBot ? "Take a breath and try again" : "That was beautiful";
     speak(byBot ? "Checkmate. I know, that one stings a little. Want another go?" : "Checkmate. That was lovely. I am doing a tiny king dance.", "cheer");
     clearSelection();
     buildBoard();
+    setActionAvailability();
     return;
   }
 
   if (game.in_draw()) {
+    gamesPlayed += 1;
+    updateDashboardStats();
     engineStatus.textContent = "Balanced ending";
     playerStatus.textContent = "Drawn game";
     speak("Draw. A calm finish is still a finish worth taking.", "blink");
     clearSelection();
     buildBoard();
+    setActionAvailability();
     return;
   }
 
   if (!byBot) {
-    const message = describeMove(move);
+    if (move.captured || move.san.includes("+") || ["e4", "d4", "Nf3", "Nc3", "Bb5", "Bc4"].includes(move.san)) {
+      greatMoves += 1;
+      updateDashboardStats();
+    }
     playerStatus.textContent = move.san.includes("+") ? "You gave check" : "Nice move";
     engineStatus.textContent = "Weak is thinking";
-    speak(message, move.captured === "q" || move.san.includes("#") ? "cheer" : "happy");
+    speak(describeMove(move), move.captured === "q" || move.san.includes("#") ? "cheer" : "happy");
   } else {
     playerStatus.textContent = "Your move";
     engineStatus.textContent = move.san.includes("+") ? "Weak gave check" : "Weak has moved";
-    if (move.san.includes("+")) {
-      speak("Weak gave check. Let’s answer carefully.", "blink");
-    } else if (move.captured === "q") {
-      speak("Weak grabbed the queen. We should recover calmly from here.", "blink");
-    } else {
-      mascotBubble.querySelector("p").textContent = "Your turn. Look for the next clean move.";
-    }
+    if (move.san.includes("+")) speak("Weak gave check. Let's answer carefully.", "blink");
+    else if (move.captured === "q") speak("Weak grabbed the queen. We should recover calmly from here.", "blink");
+    else mascotBubble.querySelector("p").textContent = "Your turn. Look for the next clean move.";
   }
 
-  turnStat.textContent = game.turn() === "w" ? "White" : "Black";
   buildBoard();
+  setActionAvailability();
 }
 
 function attemptMove(from, to) {
   const move = game.move({ from, to, promotion: "q" });
   if (!move) {
-    speak("That move doesn’t work from here. Try one of the glowing squares.", "blink");
+    speak("That move doesn't work from here. Try one of the glowing squares.", "blink");
     return;
   }
-
   clearSelection();
   afterMove(move, false);
   maybeBotMove();
@@ -376,19 +315,6 @@ function suggestedPlayerMove() {
   return chooseBotMove();
 }
 
-function setActionAvailability() {
-  if (!makeMoveBtn) return;
-  const disabled = Boolean(pendingBotMove) || game.turn() !== "w" || game.game_over();
-  makeMoveBtn.disabled = disabled;
-  if (pendingBotMove) {
-    makeMoveBtn.textContent = "Weak is thinking...";
-  } else if (game.game_over()) {
-    makeMoveBtn.textContent = "Game finished";
-  } else {
-    makeMoveBtn.textContent = "Play suggested move";
-  }
-}
-
 function resetGame() {
   if (pendingBotMove) {
     clearTimeout(pendingBotMove);
@@ -396,11 +322,10 @@ function resetGame() {
   }
   game.reset();
   clearSelection();
-  updateMoveList();
   updateInsight();
   engineStatus.textContent = "Ready for a calm game";
   playerStatus.textContent = "Your move";
-  mascotBubble.querySelector("p").textContent = "Tap a piece, then tap where you want it to go. I’ll cheer when you find something nice.";
+  mascotBubble.querySelector("p").textContent = "Tap a piece, then tap where you want it to go. I'll cheer when you find something nice.";
   buildBoard();
   setActionAvailability();
 }
@@ -408,8 +333,7 @@ function resetGame() {
 document.getElementById("flipBoardBtn")?.addEventListener("click", () => {
   flipped = !flipped;
   buildBoard();
-  showToast(flipped ? "Board flipped for a fresh angle." : "Board returned to your side.");
-  setMascotMood("blink");
+  speak(flipped ? "Board flipped for a fresh angle." : "Board returned to your side.", "blink");
 });
 
 document.getElementById("hintBtn")?.addEventListener("click", () => {
@@ -425,11 +349,6 @@ document.getElementById("hintBtn")?.addEventListener("click", () => {
   speak(`Try ${move.san}. It looks like the tidiest move here.`, "cheer");
 });
 
-document.getElementById("celebrateBtn")?.addEventListener("click", () => {
-  showToast("Small win celebrated. Keep the rhythm warm and steady.");
-  setMascotMood("happy");
-});
-
 document.getElementById("makeMoveBtn")?.addEventListener("click", () => {
   const move = suggestedPlayerMove();
   if (!move) {
@@ -440,13 +359,15 @@ document.getElementById("makeMoveBtn")?.addEventListener("click", () => {
 });
 
 document.getElementById("newGameBtn")?.addEventListener("click", () => {
+  gamesPlayed += 1;
+  updateDashboardStats();
   resetGame();
   speak("Fresh board. No pressure, just a clean start.", "blink");
 });
 
 document.getElementById("undoBtn")?.addEventListener("click", () => {
   if (!game.history().length) {
-    speak("Nothing to undo yet. We’re still at the beginning.", "blink");
+    speak("Nothing to undo yet. We're still at the beginning.", "blink");
     return;
   }
   if (pendingBotMove) {
@@ -456,7 +377,6 @@ document.getElementById("undoBtn")?.addEventListener("click", () => {
   game.undo();
   if (game.turn() === "b" && game.history().length) game.undo();
   clearSelection();
-  updateMoveList();
   updateInsight();
   buildBoard();
   setActionAvailability();
@@ -472,48 +392,5 @@ document.getElementById("analyzeBtn")?.addEventListener("click", () => {
   speak(`A calm idea here is ${move.san}. It either improves pressure or keeps your king comfortable.`, "happy");
 });
 
-document.getElementById("solvePuzzleBtn")?.addEventListener("click", () => {
-  goToScreen("play");
-  speak("I've dropped you onto the main board for now. We can turn puzzles into a real mode next.", "cheer");
-});
-
-nudgeBtn?.addEventListener("click", () => {
-  goToScreen("play");
-  const move = suggestedPlayerMove();
-  if (!move) {
-    speak("Let's use the main board once it's ready for your move.", "blink");
-    return;
-  }
-  selectedSquare = move.from;
-  legalTargets = [move.to];
-  hintSquare = move.to;
-  buildBoard();
-  speak(`Start with ${move.san}. Nice and simple.`, "cheer");
-});
-
-topContinueBtn?.addEventListener("click", () => {
-  goToScreen("play");
-  speak("Back to the board. Let's keep the rhythm going.", "happy");
-});
-
-continueGameBtn?.addEventListener("click", () => {
-  goToScreen("play");
-  speak("Your board is ready. Pick up right where you left off.", "happy");
-});
-
-dailyPuzzleBtn?.addEventListener("click", () => {
-  goToScreen("puzzles");
-  speak("Daily puzzle time. Small win energy only.", "cheer");
-});
-
-reviewReplayBtn?.addEventListener("click", () => {
-  goToScreen("play");
-  speak("Back to the board. Replay the idea and look for the fork pattern.", "blink");
-});
-
-reviewEndgameBtn?.addEventListener("click", () => {
-  goToScreen("play");
-  speak("Let's return to the board and play something calmer from here.", "happy");
-});
-
+updateDashboardStats();
 resetGame();

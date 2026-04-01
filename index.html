@@ -11,7 +11,7 @@
 </head>
 <body>
   <div class="app-shell">
-    <aside class="sidebar">
+    <header class="topbar">
       <div class="brand">
         <div class="brand-mark">WK</div>
         <div>
@@ -20,30 +20,7 @@
         </div>
       </div>
 
-      <nav class="nav">
-        <button class="nav-link is-active" data-screen="home">
-          <span>Home</span>
-          <small>Start gently</small>
-        </button>
-        <button class="nav-link" data-screen="play">
-          <span>Play</span>
-          <small>Warm board mode</small>
-        </button>
-        <button class="nav-link" data-screen="puzzles">
-          <span>Puzzles</span>
-          <small>Small daily wins</small>
-        </button>
-        <button class="nav-link" data-screen="review">
-          <span>Review</span>
-          <small>Understand calmly</small>
-        </button>
-        <button class="nav-link" data-screen="settings">
-          <span>Settings</span>
-          <small>Tune your space</small>
-        </button>
-      </nav>
-
-      <section class="sidebar-card mascot-dock">
+      <div class="topbar-mascot">
         <div class="mascot mascot--idle" id="sidebarMascot" aria-hidden="true">
           <div class="mascot-crown"></div>
           <div class="mascot-eyes">
@@ -53,362 +30,87 @@
           <div class="mascot-mouth"></div>
         </div>
         <div>
-          <p class="sidebar-label">Companion</p>
-          <h2>King Milo</h2>
-          <p class="muted">A funny little king who cheers you on, softens the hard moments, and celebrates the small wins.</p>
+          <p class="sidebar-label">King Milo</p>
+          <p class="muted">Your funny little king companion for good moves, clean captures, and calm restarts.</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="dashboard-layout">
+      <section class="hero-card hero-card--compact">
+        <div class="hero-copy">
+          <p class="eyebrow">Dashboard</p>
+          <h2>Your warm chess corner.</h2>
+          <p class="muted">One focused space: see your progress, play a game, and get a suggested move when you want a gentle nudge.</p>
+        </div>
+        <div class="hero-metrics hero-metrics--two">
+          <div class="metric-card">
+            <span class="metric-value" id="greatMovesStat">4</span>
+            <span class="metric-label">Great moves</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-value" id="gamesPlayedStat">12</span>
+            <span class="metric-label">Games played</span>
+          </div>
         </div>
       </section>
 
-      <section class="sidebar-card quiet-card">
-        <p class="sidebar-label">Today</p>
-        <div class="quiet-stat">
-          <span class="quiet-number">18</span>
-          <span class="muted">minute rhythm</span>
+      <section class="card board-stage board-stage--single">
+        <div class="section-head">
+          <div>
+            <p class="sidebar-label">Game board</p>
+            <h3>Play against Weak</h3>
+          </div>
+          <div class="inline-actions">
+            <button class="button button--ghost button--small" id="flipBoardBtn">Flip board</button>
+            <button class="button button--ghost button--small" id="hintBtn">Hint</button>
+          </div>
         </div>
-        <div class="quiet-stat">
-          <span class="quiet-number">7</span>
-          <span class="muted">day streak</span>
-        </div>
-      </section>
-    </aside>
 
-    <main class="main-area">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">Warm studio</p>
-          <h2 id="screenTitle">Home</h2>
-        </div>
-        <div class="topbar-actions">
-          <button class="button button--ghost" id="celebrateBtn">Celebrate</button>
-          <button class="button button--primary" id="continueTopBtn">Continue</button>
-        </div>
-      </header>
+        <div class="board-shell">
+          <div class="board-frame">
+            <div class="board-meta top">
+              <span>Weak</span>
+              <strong id="engineStatus">Ready for a calm game</strong>
+              <span id="engineClock">04:31</span>
+            </div>
+            <div class="chessboard" id="chessboard" aria-label="Chess board"></div>
+            <div class="board-meta bottom">
+              <span>You</span>
+              <strong id="playerStatus">Your move</strong>
+              <span id="playerClock">07:42</span>
+            </div>
+          </div>
 
-      <section class="screen is-active" data-screen-panel="home">
-        <div class="content-grid content-grid--home">
-          <section class="hero-card">
-            <div class="hero-copy">
-              <p class="eyebrow">Welcome back</p>
-              <h3>Your chess corner is ready.</h3>
-              <p class="muted">Pick up where you left off, warm up with a puzzle, or settle into a calm review. The next step should always feel easy to start.</p>
-              <div class="hero-actions">
-                <button class="button button--primary" id="continueGameBtn">Continue last game</button>
-                <button class="button button--secondary" id="dailyPuzzleBtn">Daily puzzle</button>
-              </div>
-            </div>
-            <div class="hero-metrics">
-              <div class="metric-card">
-                <span class="metric-value">1220</span>
-                <span class="metric-label">Comfort rating</span>
-              </div>
-              <div class="metric-card">
-                <span class="metric-value">84%</span>
-                <span class="metric-label">Puzzle calmness</span>
-              </div>
-              <div class="metric-card">
-                <span class="metric-value">4</span>
-                <span class="metric-label">Strong moves today</span>
-              </div>
-            </div>
-          </section>
-
-          <section class="card progress-card">
-            <div class="section-head">
-              <div>
-                <p class="sidebar-label">Momentum</p>
-                <h3>Steady growth, not pressure.</h3>
-              </div>
-              <span class="chip chip--warm">Personalized</span>
-            </div>
-            <div class="progress-strip">
-              <div class="progress-item">
-                <div class="progress-meta">
-                  <span>Consistency</span>
-                  <strong>7 days</strong>
-                </div>
-                <div class="progress-bar"><span style="width: 72%"></span></div>
-              </div>
-              <div class="progress-item">
-                <div class="progress-meta">
-                  <span>Tactics confidence</span>
-                  <strong>61%</strong>
-                </div>
-                <div class="progress-bar progress-bar--sage"><span style="width: 61%"></span></div>
-              </div>
-              <div class="progress-item">
-                <div class="progress-meta">
-                  <span>Endgame comfort</span>
-                  <strong>43%</strong>
-                </div>
-                <div class="progress-bar progress-bar--berry"><span style="width: 43%"></span></div>
-              </div>
-            </div>
-          </section>
-
-          <section class="card recommendation-card">
-            <div class="section-head">
-              <div>
-                <p class="sidebar-label">Recommended</p>
-                <h3>Your best next move</h3>
-              </div>
-            </div>
-            <div class="recommendation-list">
-              <button class="list-row">
-                <div>
-                  <strong>Gentle 10-minute puzzle run</strong>
-                  <p class="muted">Best when you want a quick confidence boost.</p>
-                </div>
-                <span class="list-tag">Easy start</span>
-              </button>
-              <button class="list-row">
-                <div>
-                  <strong>Review yesterday’s forks</strong>
-                  <p class="muted">You usually retain more after a short replay.</p>
-                </div>
-                <span class="list-tag">Smart follow-up</span>
-              </button>
-              <button class="list-row">
-                <div>
-                  <strong>Play one calm game vs Weak</strong>
-                  <p class="muted">A full board session fits your current rhythm.</p>
-                </div>
-                <span class="list-tag">Board time</span>
-              </button>
-            </div>
-          </section>
-        </div>
-      </section>
-
-      <section class="screen" data-screen-panel="play">
-        <div class="content-grid content-grid--play">
-          <section class="card board-stage">
-            <div class="section-head">
-              <div>
-                <p class="sidebar-label">Game board</p>
-                <h3>Warm board mode</h3>
-              </div>
-              <div class="inline-actions">
-                <button class="button button--ghost button--small" id="flipBoardBtn">Flip board</button>
-                <button class="button button--ghost button--small" id="hintBtn">Hint</button>
-              </div>
-            </div>
-
-            <div class="board-frame">
-              <div class="board-meta top">
-                <span>Weak</span>
-                <strong id="engineStatus">Ready for a calm game</strong>
-                <span id="engineClock">04:31</span>
-              </div>
-              <div class="chessboard" id="chessboard" aria-label="Chess board"></div>
-              <div class="board-meta bottom">
-                <span>You</span>
-                <strong id="playerStatus">Your move</strong>
-                <span id="playerClock">07:42</span>
-              </div>
-            </div>
-
+          <aside class="board-sidecard">
             <div class="mascot-bubble" id="mascotBubble">
               <strong>King Milo</strong>
               <p>Tap a piece, then tap where you want it to go. I’ll cheer when you find something nice.</p>
             </div>
 
-            <div class="board-controls">
+            <div class="card card--subtle insight-card">
+              <div class="engine-score">
+                <span class="score-pill" id="scorePill">Balanced</span>
+                <div>
+                  <strong id="insightTitle">Friendly read</strong>
+                  <p class="muted" id="insightBody">Weak likes calm development and center control.</p>
+                </div>
+              </div>
+              <div class="stats-grid">
+                <div><span>Turn</span><strong id="turnStat">White</strong></div>
+                <div><span>State</span><strong id="stateStat">Opening</strong></div>
+                <div><span>Tempo</span><strong id="tempoStat">Gentle</strong></div>
+                <div><span>Focus</span><strong id="focusStat">Center</strong></div>
+              </div>
+            </div>
+
+            <div class="board-controls board-controls--stack">
               <button class="button button--primary" id="makeMoveBtn">Play suggested move</button>
               <button class="button button--secondary" id="newGameBtn">New game</button>
               <button class="button button--ghost" id="undoBtn">Undo</button>
               <button class="button button--ghost" id="analyzeBtn">Analyze</button>
             </div>
-          </section>
-
-          <aside class="side-panel">
-            <section class="card">
-              <div class="section-head">
-                <div>
-                  <p class="sidebar-label">Engine insight</p>
-                  <h3>Friendly readout</h3>
-                </div>
-              </div>
-              <div class="engine-panel">
-                <div class="engine-score">
-                  <span class="score-pill" id="scorePill">Balanced</span>
-                  <div>
-                    <strong id="insightTitle">Friendly read</strong>
-                    <p class="muted" id="insightBody">Weak likes calm development and center control.</p>
-                  </div>
-                </div>
-                <div class="pv-line">
-                  <span class="sidebar-label">Position</span>
-                  <p id="positionText">Start position</p>
-                </div>
-                <div class="stats-grid">
-                  <div><span>Turn</span><strong id="turnStat">White</strong></div>
-                  <div><span>State</span><strong id="stateStat">Opening</strong></div>
-                  <div><span>Tempo</span><strong id="tempoStat">Gentle</strong></div>
-                  <div><span>Focus</span><strong id="focusStat">Center</strong></div>
-                </div>
-              </div>
-            </section>
-
-            <section class="card">
-              <div class="section-head">
-                <div>
-                  <p class="sidebar-label">Move list</p>
-                  <h3>Readable rhythm</h3>
-                </div>
-              </div>
-              <div class="move-list" id="moveList"></div>
-            </section>
           </aside>
-        </div>
-      </section>
-
-      <section class="screen" data-screen-panel="puzzles">
-        <div class="content-grid content-grid--puzzle">
-          <section class="card puzzle-card">
-            <div class="section-head">
-              <div>
-                <p class="sidebar-label">Daily puzzle</p>
-                <h3>Find the warm tactical move</h3>
-              </div>
-              <span class="chip chip--sage">2 move tactic</span>
-            </div>
-            <p class="muted">A calm challenge. Look for the move that wins material cleanly without rushing.</p>
-            <div class="puzzle-progress">
-              <div class="progress-ring">
-                <svg viewBox="0 0 120 120">
-                  <circle cx="60" cy="60" r="48"></circle>
-                  <circle cx="60" cy="60" r="48" class="progress-ring__value"></circle>
-                </svg>
-                <div class="progress-ring__label">
-                  <strong>3/5</strong>
-                  <span>solved</span>
-                </div>
-              </div>
-              <div class="puzzle-stats">
-                <div><span>Streak</span><strong>12</strong></div>
-                <div><span>Calm accuracy</span><strong>88%</strong></div>
-                <div><span>Best time</span><strong>42s</strong></div>
-              </div>
-            </div>
-            <div class="board-controls">
-              <button class="button button--primary" id="solvePuzzleBtn">Solve puzzle</button>
-              <button class="button button--secondary" id="nudgeBtn">Need a nudge</button>
-            </div>
-          </section>
-
-          <section class="card lesson-card">
-            <div class="section-head">
-              <div>
-                <p class="sidebar-label">What grows with time</p>
-                <h3>Your style profile</h3>
-              </div>
-            </div>
-            <div class="profile-stack">
-              <div class="profile-row">
-                <span>Prefers short puzzle bursts on weekdays</span>
-                <div class="mini-bar"><span style="width: 78%"></span></div>
-              </div>
-              <div class="profile-row">
-                <span>Finds forks faster after one warm-up</span>
-                <div class="mini-bar mini-bar--sage"><span style="width: 66%"></span></div>
-              </div>
-              <div class="profile-row">
-                <span>Needs calmer review after two quick losses</span>
-                <div class="mini-bar mini-bar--berry"><span style="width: 58%"></span></div>
-              </div>
-            </div>
-          </section>
-        </div>
-      </section>
-
-      <section class="screen" data-screen-panel="review">
-        <div class="content-grid content-grid--review">
-          <section class="card review-card">
-            <div class="section-head">
-              <div>
-                <p class="sidebar-label">Post-game review</p>
-                <h3>Understand first, then improve</h3>
-              </div>
-            </div>
-            <div class="review-timeline">
-              <div class="timeline-item is-good">
-                <strong>Move 12</strong>
-                <p>You opened the center at the right time and gained space.</p>
-              </div>
-              <div class="timeline-item is-soft">
-                <strong>Move 18</strong>
-                <p>You missed a fork pattern, but your king safety stayed strong.</p>
-              </div>
-              <div class="timeline-item">
-                <strong>Move 24</strong>
-                <p>Endgame transition was solid. Review rook activity next.</p>
-              </div>
-            </div>
-          </section>
-
-          <section class="card">
-            <div class="section-head">
-              <div>
-                <p class="sidebar-label">Recovery path</p>
-                <h3>One next thing</h3>
-              </div>
-            </div>
-            <div class="recommendation-list">
-              <button class="list-row" id="reviewReplayBtn">
-                <div>
-                  <strong>Replay the fork position</strong>
-                  <p class="muted">A two-minute revisit while it’s still fresh.</p>
-                </div>
-              </button>
-              <button class="list-row" id="reviewEndgameBtn">
-                <div>
-                  <strong>Start a calmer endgame drill</strong>
-                  <p class="muted">Good after a game that felt a little hectic.</p>
-                </div>
-              </button>
-            </div>
-          </section>
-        </div>
-      </section>
-
-      <section class="screen" data-screen-panel="settings">
-        <div class="content-grid content-grid--settings">
-          <section class="card settings-card">
-            <div class="section-head">
-              <div>
-                <p class="sidebar-label">Preferences</p>
-                <h3>Your cozy control room</h3>
-              </div>
-            </div>
-            <div class="settings-grid">
-              <label class="field">
-                <span>Session pace</span>
-                <input type="range" min="1" max="3" value="2">
-              </label>
-              <label class="field">
-                <span>Board warmth</span>
-                <input type="range" min="1" max="3" value="2">
-              </label>
-              <label class="field">
-                <span>Engine strength</span>
-                <select>
-                  <option>Gentle</option>
-                  <option selected>Comfort</option>
-                  <option>Competitive</option>
-                </select>
-              </label>
-              <label class="toggle">
-                <span>Celebrate small wins</span>
-                <input type="checkbox" checked>
-                <span class="toggle-ui"></span>
-              </label>
-              <label class="toggle">
-                <span>Keep mascot nearby</span>
-                <input type="checkbox" checked>
-                <span class="toggle-ui"></span>
-              </label>
-            </div>
-          </section>
         </div>
       </section>
     </main>
