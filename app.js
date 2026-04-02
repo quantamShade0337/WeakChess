@@ -8,7 +8,9 @@ const gameResultOverlay = document.getElementById("gameResultOverlay");
 const gameResultText = document.getElementById("gameResultText");
 const mascotBubble = document.getElementById("mascotBubble");
 const engineStatus = document.getElementById("engineStatus");
+const engineClock = document.getElementById("engineClock");
 const playerStatus = document.getElementById("playerStatus");
+const playerClock = document.getElementById("playerClock");
 const scorePill = document.getElementById("scorePill");
 const insightTitle = document.getElementById("insightTitle");
 const insightBody = document.getElementById("insightBody");
@@ -26,6 +28,7 @@ const pieceMap = {
   bp: "♟", bn: "♞", bb: "♝", br: "♜", bq: "♛", bk: "♚",
 };
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const INITIAL_TIME_MS = 10 * 60 * 1000;
 
 let selectedSquare = null;
 let legalTargets = [];
@@ -34,6 +37,11 @@ let hintSquare = null;
 let pendingBotMove = null;
 let greatMoves = 4;
 let gamesPlayed = 12;
+let whiteTimeMs = INITIAL_TIME_MS;
+let blackTimeMs = INITIAL_TIME_MS;
+let clockInterval = null;
+let lastClockTick = 0;
+let timeoutWinner = null;
 
 function showToast(message) {
   toast.textContent = message;
@@ -63,6 +71,98 @@ function currentBoardMatrix() {
     });
   });
   return matrix;
+}
+
+function formatClock(ms) {
+  const clamped = Math.max(0, ms);
+  const totalSeconds = Math.ceil(clamped / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function renderClocks() {
+  playerClock.textContent = formatClock(whiteTimeMs);
+  engineClock.textContent = formatClock(blackTimeMs);
+}
+
+function isFinished() {
+  return Boolean(timeoutWinner) || game.game_over();
+}
+
+function stopClockLoop() {
+  if (clockInterval) {
+    window.clearInterval(clockInterval);
+    clockInterval = null;
+  }
+}
+
+function handleTimeout(winner) {
+  if (timeoutWinner || game.game_over()) return;
+  timeoutWinner = winner;
+  pendingBotMove = null;
+  stopClockLoop();
+  clearSelection();
+  buildBoard();
+  if (winner === "w") {
+    gamesPlayed += 1;
+    greatMoves += 1;
+    updateDashboardStats();
+    engineStatus.textContent = "Flagged";
+    playerStatus.textContent = "Won";
+    speak("Black flagged.");
+    showGameResult("win");
+  } else {
+    gamesPlayed += 1;
+    updateDashboardStats();
+    engineStatus.textContent = "Won";
+    playerStatus.textContent = "Flagged";
+    speak("White flagged.");
+    showGameResult("loss");
+  }
+  setActionAvailability();
+}
+
+function tickClock() {
+  if (isFinished()) {
+    stopClockLoop();
+    return;
+  }
+
+  const now = Date.now();
+  if (!lastClockTick) {
+    lastClockTick = now;
+    return;
+  }
+
+  const elapsed = now - lastClockTick;
+  lastClockTick = now;
+
+  if (game.turn() === "w") {
+    whiteTimeMs = Math.max(0, whiteTimeMs - elapsed);
+    if (whiteTimeMs === 0) {
+      renderClocks();
+      handleTimeout("b");
+      return;
+    }
+  } else {
+    blackTimeMs = Math.max(0, blackTimeMs - elapsed);
+    if (blackTimeMs === 0) {
+      renderClocks();
+      handleTimeout("w");
+      return;
+    }
+  }
+
+  renderClocks();
+}
+
+function startClockLoop() {
+  stopClockLoop();
+  lastClockTick = Date.now();
+  renderClocks();
+  if (isFinished()) return;
+  clockInterval = window.setInterval(tickClock, 250);
 }
 
 function squareName(row, col) {
@@ -220,10 +320,10 @@ function updateInsight(lastMove = null) {
 }
 
 function setActionAvailability() {
-  const disabled = Boolean(pendingBotMove) || game.turn() !== "w" || game.game_over();
+  const disabled = Boolean(pendingBotMove) || game.turn() !== "w" || isFinished();
   makeMoveBtn.disabled = disabled;
   if (pendingBotMove) makeMoveBtn.textContent = "Thinking...";
-  else if (game.game_over()) makeMoveBtn.textContent = "Game finished";
+  else if (isFinished()) makeMoveBtn.textContent = "Game finished";
   else makeMoveBtn.textContent = "Suggested move";
 }
 
@@ -246,7 +346,7 @@ function buildBoard() {
       square.setAttribute("aria-label", `Square ${name}`);
       const pieceAtSquare = game.get(name);
 
-      if (game.turn() !== "w" || pendingBotMove) square.disabled = true;
+      if (game.turn() !== "w" || pendingBotMove || isFinished()) square.disabled = true;
 
       const history = game.history({ verbose: true });
       const lastMove = history[history.length - 1];
@@ -268,7 +368,7 @@ function buildBoard() {
       }
 
       square.addEventListener("click", () => {
-        if (pendingBotMove || game.turn() !== "w") return;
+        if (pendingBotMove || game.turn() !== "w" || isFinished()) return;
         if (selectedSquare && legalTargets.includes(name)) {
           attemptMove(selectedSquare, name);
           return;
@@ -316,7 +416,7 @@ function fallbackBotMove() {
 }
 
 async function chooseBotMove() {
-  if (game.game_over()) return null;
+  if (isFinished()) return null;
 
   // Map moves to UCI strings (e.g., "e2e4")
   const moves = game.history({ verbose: true })
@@ -362,13 +462,19 @@ async function chooseBotMove() {
 }
 
 async function maybeBotMove() {
-  if (game.turn() !== "b" || game.game_over()) return;
+  if (game.turn() !== "b" || isFinished()) return;
 
   pendingBotMove = true;
   engineStatus.textContent = "Thinking...";
   setActionAvailability();
 
   const botMoveData = await chooseBotMove();
+  if (isFinished()) {
+    pendingBotMove = null;
+    buildBoard();
+    setActionAvailability();
+    return;
+  }
 
   if (botMoveData) {
     const movingSymbol = pieceSymbolFor(botMoveData.from);
@@ -395,6 +501,7 @@ async function afterMove(move, byBot = false, movingSymbol = pieceSymbolFor(move
     buildBoard();
     await animateMove({ from: move.from, to: move.to, symbol: movingSymbol });
     showGameResult(byBot ? "loss" : "win");
+    stopClockLoop();
     setActionAvailability();
     return;
   }
@@ -409,6 +516,7 @@ async function afterMove(move, byBot = false, movingSymbol = pieceSymbolFor(move
     buildBoard();
     await animateMove({ from: move.from, to: move.to, symbol: movingSymbol });
     showGameResult("draw");
+    stopClockLoop();
     setActionAvailability();
     return;
   }
@@ -432,6 +540,7 @@ async function afterMove(move, byBot = false, movingSymbol = pieceSymbolFor(move
   buildBoard();
   await animateMove({ from: move.from, to: move.to, symbol: movingSymbol });
   setActionAvailability();
+  startClockLoop();
 }
 
 async function attemptMove(from, to) {
@@ -447,12 +556,15 @@ async function attemptMove(from, to) {
 }
 
 async function suggestedPlayerMove() {
-  if (pendingBotMove || game.turn() !== "w" || game.game_over()) return null;
+  if (pendingBotMove || game.turn() !== "w" || isFinished()) return null;
   return await chooseBotMove();
 }
 
 function resetGame() {
   pendingBotMove = null;
+  timeoutWinner = null;
+  whiteTimeMs = INITIAL_TIME_MS;
+  blackTimeMs = INITIAL_TIME_MS;
   game.reset();
   clearSelection();
   hideGameResult();
@@ -462,6 +574,7 @@ function resetGame() {
   mascotBubble.querySelector("p").textContent = "Tap. Move.";
   buildBoard();
   setActionAvailability();
+  startClockLoop();
 }
 
 document.getElementById("flipBoardBtn")?.addEventListener("click", () => {
@@ -473,7 +586,7 @@ document.getElementById("flipBoardBtn")?.addEventListener("click", () => {
 document.getElementById("hintBtn")?.addEventListener("click", async () => {
   const move = await suggestedPlayerMove();
   if (!move) {
-    speak(game.game_over() ? "Game over." : "Wait.");
+    speak(isFinished() ? "Game over." : "Wait.");
     return;
   }
   selectedSquare = move.from;
@@ -486,7 +599,7 @@ document.getElementById("hintBtn")?.addEventListener("click", async () => {
 document.getElementById("makeMoveBtn")?.addEventListener("click", async () => {
   const move = await suggestedPlayerMove();
   if (!move) {
-    speak(game.game_over() ? "Game over." : "Wait.");
+    speak(isFinished() ? "Game over." : "Wait.");
     return;
   }
   attemptMove(move.from, move.to);
@@ -505,6 +618,7 @@ document.getElementById("undoBtn")?.addEventListener("click", () => {
     return;
   }
   pendingBotMove = null;
+  timeoutWinner = null;
   game.undo();
   if (game.turn() === "b" && game.history().length) game.undo();
   clearSelection();
@@ -512,13 +626,14 @@ document.getElementById("undoBtn")?.addEventListener("click", () => {
   updateInsight();
   buildBoard();
   setActionAvailability();
+  startClockLoop();
   speak("Undone.");
 });
 
 document.getElementById("analyzeBtn")?.addEventListener("click", async () => {
   const move = await suggestedPlayerMove();
   if (!move) {
-    speak(game.game_over() ? "Game over." : "Wait.");
+    speak(isFinished() ? "Game over." : "Wait.");
     return;
   }
   speak(`${move.from}${move.to}.`);

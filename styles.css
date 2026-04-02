@@ -68,7 +68,7 @@ button {
   max-width: 1440px;
   margin: 0 auto;
   min-height: 100vh;
-  padding: var(--space-6);
+  padding: max(var(--space-5), env(safe-area-inset-top)) var(--space-6) max(var(--space-5), env(safe-area-inset-bottom)) var(--space-6);
   display: grid;
   gap: var(--space-5);
 }
@@ -450,6 +450,7 @@ h3 {
 
 .board-controls--stack {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .inline-actions {
@@ -576,30 +577,206 @@ h3 {
   .board-sidecard {
     width: 100%;
   }
+
+  .board-controls--stack {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
   .app-shell {
-    padding: var(--space-4);
+    gap: var(--space-4);
+    padding: max(12px, env(safe-area-inset-top)) var(--space-3) max(14px, env(safe-area-inset-bottom)) var(--space-3);
   }
 
-  .topbar,
-  .section-head,
-  .inline-actions,
-  .board-controls {
-    display: grid;
+  body {
+    background-image: linear-gradient(180deg, #f9f3eb 0%, var(--bg) 100%);
+  }
+
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .brand {
+    gap: var(--space-3);
+  }
+
+  .brand-mark {
+    width: 42px;
+    height: 42px;
+    font-size: 14px;
+  }
+
+  .eyebrow,
+  .sidebar-label {
+    margin-bottom: 2px;
+    font-size: 11px;
+  }
+
+  h1 {
+    font-size: 20px;
+    line-height: 1.05;
+  }
+
+  .topbar-note .muted {
+    display: none;
+  }
+
+  .topbar-note {
+    justify-self: end;
+    gap: 0;
+  }
+
+  .dashboard-layout {
+    gap: var(--space-4);
+  }
+
+  .hero-card {
+    padding: var(--space-4);
+    box-shadow: var(--shadow-1);
+  }
+
+  .hero-card--compact {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .hero-copy .muted {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  h2 {
+    font-size: 28px;
   }
 
   .hero-metrics--two {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
   }
 
   .metric-card {
     min-width: 0;
+    padding: var(--space-3);
+    border-radius: 10px;
+  }
+
+  .metric-value {
+    margin-bottom: 4px;
+    font-size: 28px;
+  }
+
+  .metric-label {
+    font-size: 12px;
+  }
+
+  .board-stage {
+    padding: var(--space-3);
+    gap: var(--space-4);
+  }
+
+  .section-head {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  h3 {
+    font-size: 22px;
+  }
+
+  .inline-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .board-shell {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .board-frame {
+    padding: var(--space-3);
+    border-radius: 14px;
+  }
+
+  .board-meta {
+    padding: 0;
+    font-size: 12px;
+  }
+
+  .board-viewport {
+    width: 100%;
+    margin: var(--space-3) auto;
   }
 
   .chessboard {
     border-width: 8px;
+    border-radius: 14px;
+  }
+
+  .game-result-overlay {
+    padding: var(--space-3);
+  }
+
+  .game-result-overlay strong {
+    width: min(100%, 240px);
+    padding: 16px 18px;
+    border-radius: 14px;
+    font-size: clamp(24px, 8vw, 34px);
+    text-align: center;
+  }
+
+  .board-sidecard {
+    gap: var(--space-3);
+  }
+
+  .mascot-bubble,
+  .card--subtle {
+    padding: var(--space-3);
+  }
+
+  .engine-score {
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .stats-grid {
+    margin-top: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .stats-grid div {
+    padding: 10px;
+  }
+
+  .board-controls {
+    display: grid;
+  }
+
+  .board-controls--stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .button {
+    min-height: 46px;
+    padding: 0 var(--space-3);
+    font-size: 14px;
+  }
+
+  .button--primary {
+    grid-column: 1 / -1;
+  }
+
+  .button--small {
+    height: 40px;
+  }
+
+  .piece {
+    font-size: clamp(25px, 8vw, 40px);
   }
 
   .toast {
