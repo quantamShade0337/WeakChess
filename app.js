@@ -3,6 +3,9 @@ import { Chess } from "./chess.js";
 
 const toast = document.getElementById("toast");
 const board = document.getElementById("chessboard");
+const boardViewport = document.getElementById("boardViewport");
+const gameResultOverlay = document.getElementById("gameResultOverlay");
+const gameResultText = document.getElementById("gameResultText");
 const mascotBubble = document.getElementById("mascotBubble");
 const engineStatus = document.getElementById("engineStatus");
 const playerStatus = document.getElementById("playerStatus");
@@ -131,6 +134,27 @@ function clearSelection() {
   selectedSquare = null;
   legalTargets = [];
   hintSquare = null;
+}
+
+function hideGameResult() {
+  boardViewport.classList.remove("is-finished");
+  gameResultOverlay.hidden = true;
+  gameResultOverlay.classList.remove("game-result-overlay--win", "game-result-overlay--loss", "game-result-overlay--draw");
+}
+
+function showGameResult(type) {
+  hideGameResult();
+  const config = {
+    win: { text: "CHECKMATE", className: "game-result-overlay--win" },
+    loss: { text: "GAME OVER", className: "game-result-overlay--loss" },
+    draw: { text: "DRAW", className: "game-result-overlay--draw" },
+  }[type];
+
+  if (!config) return;
+  gameResultText.textContent = config.text;
+  gameResultOverlay.hidden = false;
+  gameResultOverlay.classList.add(config.className);
+  boardViewport.classList.add("is-finished");
 }
 
 function describeMove(move) {
@@ -370,6 +394,7 @@ async function afterMove(move, byBot = false, movingSymbol = pieceSymbolFor(move
     clearSelection();
     buildBoard();
     await animateMove({ from: move.from, to: move.to, symbol: movingSymbol });
+    showGameResult(byBot ? "loss" : "win");
     setActionAvailability();
     return;
   }
@@ -383,6 +408,7 @@ async function afterMove(move, byBot = false, movingSymbol = pieceSymbolFor(move
     clearSelection();
     buildBoard();
     await animateMove({ from: move.from, to: move.to, symbol: movingSymbol });
+    showGameResult("draw");
     setActionAvailability();
     return;
   }
@@ -429,6 +455,7 @@ function resetGame() {
   pendingBotMove = null;
   game.reset();
   clearSelection();
+  hideGameResult();
   updateInsight();
   engineStatus.textContent = "Ready";
   playerStatus.textContent = "Move";
@@ -481,6 +508,7 @@ document.getElementById("undoBtn")?.addEventListener("click", () => {
   game.undo();
   if (game.turn() === "b" && game.history().length) game.undo();
   clearSelection();
+  hideGameResult();
   updateInsight();
   buildBoard();
   setActionAvailability();

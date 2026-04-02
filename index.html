@@ -66,7 +66,12 @@
               <strong id="engineStatus">Ready</strong>
               <span id="engineClock">04:31</span>
             </div>
-            <div class="chessboard" id="chessboard" aria-label="Chess board"></div>
+            <div class="board-viewport" id="boardViewport">
+              <div class="chessboard" id="chessboard" aria-label="Chess board"></div>
+              <div class="game-result-overlay" id="gameResultOverlay" aria-live="polite" hidden>
+                <strong id="gameResultText">CHECKMATE</strong>
+              </div>
+            </div>
             <div class="board-meta bottom">
               <span>You</span>
               <strong id="playerStatus">Move</strong>
