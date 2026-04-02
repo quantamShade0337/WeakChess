@@ -1,5 +1,6 @@
 import { Chess } from "./chess.js";
 
+
 const toast = document.getElementById("toast");
 const board = document.getElementById("chessboard");
 const mascotBubble = document.getElementById("mascotBubble");
@@ -204,23 +205,38 @@ function buildBoard() {
   });
 }
 
-function chooseBotMove() {
-  const moves = game.moves({ verbose: true });
-  if (!moves.length) return null;
-  const pieceValues = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 };
-  const scored = moves.map((move) => {
-    let score = 0;
-    if (move.san.includes("#")) score += 1000;
-    if (move.san.includes("+")) score += 100;
-    if (move.captured) score += (pieceValues[move.captured] || 0) * 20;
-    if (move.flags.includes("k") || move.flags.includes("q")) score += 14;
-    if (["e5", "d5", "e4", "d4", "c5", "f5"].includes(move.to)) score += 5;
-    if (move.piece === "n" || move.piece === "b") score += 4;
-    score += Math.random() * 2;
-    return { move, score };
-  });
-  scored.sort((a, b) => b.score - a.score);
-  return scored[0].move;
+async function chooseBotMove() {
+  if (game.game_over()) return null;
+
+  const moves = game.history({ verbose: true })
+    .map(m => m.from + m.to + (m.promotion || ""));
+
+  try {
+    const res = await fetch("http://localhost:3000/move", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        startfen: "startpos",
+        ucimoves: moves
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.bestmove) return null;
+
+    return {
+      from: data.bestmove.slice(0, 2),
+      to: data.bestmove.slice(2, 4),
+      promotion: data.bestmove[4] || "q"
+    };
+
+  } catch (err) {
+    console.error("Fetch error:", err);
+    return null;
+  }
 }
 
 function afterMove(move, byBot = false) {
@@ -282,26 +298,51 @@ function attemptMove(from, to) {
   maybeBotMove();
 }
 
-function maybeBotMove() {
+async function maybeBotMove() {
   if (game.turn() !== "b" || game.game_over()) return;
-  pendingBotMove = setTimeout(() => {
-    const move = chooseBotMove();
-    if (move) {
-      game.move(move);
-      afterMove(move, true);
+
+  pendingBotMove = true;
+  engineStatus.textContent = "Thinking...";
+  setActionAvailability();
+
+  const moves = game.history({ verbose: true })
+    .map(m => m.from + m.to + (m.promotion || ""));
+
+  try {
+    const res = await fetch("http://localhost:3000/move", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        startfen: "startpos",
+        ucimoves: moves
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.bestmove) {
+      const move = game.move({
+        from: data.bestmove.slice(0, 2),
+        to: data.bestmove.slice(2, 4),
+        promotion: data.bestmove[4] || "q"
+      });
+
+      if (move) afterMove(move, true);
     }
-    pendingBotMove = null;
-    buildBoard();
-    setActionAvailability();
-  }, 650);
+
+  } catch (err) {
+    console.error("Bot move error:", err);
+  }
+
+  pendingBotMove = null;
+  buildBoard();
   setActionAvailability();
 }
-
-function suggestedPlayerMove() {
+async function suggestedPlayerMove() {
   if (pendingBotMove || game.turn() !== "w" || game.game_over()) return null;
-  const moves = game.moves({ verbose: true });
-  if (!moves.length) return null;
-  return chooseBotMove();
+  return await chooseBotMove();
 }
 
 function resetGame() {
@@ -325,8 +366,8 @@ document.getElementById("flipBoardBtn")?.addEventListener("click", () => {
   speak(flipped ? "Flipped." : "Reset view.");
 });
 
-document.getElementById("hintBtn")?.addEventListener("click", () => {
-  const move = suggestedPlayerMove();
+document.getElementById("hintBtn")?.addEventListener("click", async () => {
+  const move = await suggestedPlayerMove();
   if (!move) {
     speak(game.game_over() ? "Game over." : "Wait.");
     return;
@@ -335,11 +376,11 @@ document.getElementById("hintBtn")?.addEventListener("click", () => {
   legalTargets = [move.to];
   hintSquare = move.to;
   buildBoard();
-  speak(`Try ${move.san}.`);
+  speak(`Try ${move.from}${move.to}.`);
 });
 
-document.getElementById("makeMoveBtn")?.addEventListener("click", () => {
-  const move = suggestedPlayerMove();
+document.getElementById("makeMoveBtn")?.addEventListener("click", async () => {
+  const move = await suggestedPlayerMove();
   if (!move) {
     speak(game.game_over() ? "Game over." : "Wait.");
     return;
@@ -372,13 +413,13 @@ document.getElementById("undoBtn")?.addEventListener("click", () => {
   speak("Undone.");
 });
 
-document.getElementById("analyzeBtn")?.addEventListener("click", () => {
-  const move = suggestedPlayerMove();
+document.getElementById("analyzeBtn")?.addEventListener("click", async () => {
+  const move = await suggestedPlayerMove();
   if (!move) {
     speak(game.game_over() ? "Game over." : "Wait.");
     return;
   }
-  speak(`${move.san}.`);
+  speak(`${move.from}${move.to}.`);
 });
 
 updateDashboardStats();
