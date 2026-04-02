@@ -210,13 +210,16 @@ const API_URL = "https://weakserver-production.up.railway.app";
 async function chooseBotMove() {
   if (game.game_over()) return null;
 
+  // Map moves to UCI strings (e.g., "e2e4")
   const moves = game.history({ verbose: true })
     .map(m => m.from + m.to + (m.promotion || ""));
 
   try {
     const res = await fetch(`${API_URL}/move`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
         startfen: "startpos",
         ucimoves: moves
@@ -232,8 +235,7 @@ async function chooseBotMove() {
     return {
       from: data.bestmove.slice(0, 2),
       to: data.bestmove.slice(2, 4),
-      promotion: data.bestmove[4] || "q",
-      score: data.score // Capture the score from the API
+      promotion: data.bestmove[4] || "q"
     };
 
   } catch (err) {
@@ -254,9 +256,7 @@ async function maybeBotMove() {
 
   if (botMoveData) {
     const move = game.move(botMoveData);
-    if (move) {
-      afterMove(move, true, botMoveData.score);
-    }
+    if (move) afterMove(move, true);
   }
 
   pendingBotMove = null;
@@ -264,16 +264,8 @@ async function maybeBotMove() {
   setActionAvailability();
 }
 
-function afterMove(move, byBot = false, engineScore = 0) {
+function afterMove(move, byBot = false) {
   updateInsight(move);
-
-  // Update the Score Pill with the negative of the engine score
-  // If engine says +100 (it is winning), pill shows -100 (player is losing)
-  if (!game.game_over()) {
-    const displayScore = engineScore * -1;
-    // Format with a plus sign if positive
-    scorePill.textContent = displayScore > 0 ? `+${displayScore}` : displayScore;
-  }
 
   if (game.in_checkmate()) {
     if (!byBot) greatMoves += 1;
@@ -281,7 +273,6 @@ function afterMove(move, byBot = false, engineScore = 0) {
     updateDashboardStats();
     engineStatus.textContent = byBot ? "Mate" : "Mate";
     playerStatus.textContent = byBot ? "Lost" : "Won";
-    scorePill.textContent = byBot ? "-Mate" : "+Mate"; // Specific checkmate text
     speak(byBot ? "Checkmate. Again?" : "Checkmate.");
     clearSelection();
     buildBoard();
