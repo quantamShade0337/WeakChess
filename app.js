@@ -205,14 +205,17 @@ function buildBoard() {
   });
 }
 
+const API_URL = "https://weakserver-production.up.railway.app"; 
+
 async function chooseBotMove() {
   if (game.game_over()) return null;
 
+  // Map moves to UCI strings (e.g., "e2e4")
   const moves = game.history({ verbose: true })
     .map(m => m.from + m.to + (m.promotion || ""));
 
   try {
-    const res = await fetch("http://localhost:3000/move", {
+    const res = await fetch(`${API_URL}/move`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -223,6 +226,8 @@ async function chooseBotMove() {
       })
     });
 
+    if (!res.ok) throw new Error("Network response was not ok");
+    
     const data = await res.json();
 
     if (!data.bestmove) return null;
@@ -235,8 +240,28 @@ async function chooseBotMove() {
 
   } catch (err) {
     console.error("Fetch error:", err);
+    showToast("Engine connection failed");
     return null;
   }
+}
+
+async function maybeBotMove() {
+  if (game.turn() !== "b" || game.game_over()) return;
+
+  pendingBotMove = true;
+  engineStatus.textContent = "Thinking...";
+  setActionAvailability();
+
+  const botMoveData = await chooseBotMove();
+
+  if (botMoveData) {
+    const move = game.move(botMoveData);
+    if (move) afterMove(move, true);
+  }
+
+  pendingBotMove = null;
+  buildBoard();
+  setActionAvailability();
 }
 
 function afterMove(move, byBot = false) {
@@ -298,48 +323,6 @@ function attemptMove(from, to) {
   maybeBotMove();
 }
 
-async function maybeBotMove() {
-  if (game.turn() !== "b" || game.game_over()) return;
-
-  pendingBotMove = true;
-  engineStatus.textContent = "Thinking...";
-  setActionAvailability();
-
-  const moves = game.history({ verbose: true })
-    .map(m => m.from + m.to + (m.promotion || ""));
-
-  try {
-    const res = await fetch("http://localhost:3000/move", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        startfen: "startpos",
-        ucimoves: moves
-      })
-    });
-
-    const data = await res.json();
-
-    if (data.bestmove) {
-      const move = game.move({
-        from: data.bestmove.slice(0, 2),
-        to: data.bestmove.slice(2, 4),
-        promotion: data.bestmove[4] || "q"
-      });
-
-      if (move) afterMove(move, true);
-    }
-
-  } catch (err) {
-    console.error("Bot move error:", err);
-  }
-
-  pendingBotMove = null;
-  buildBoard();
-  setActionAvailability();
-}
 async function suggestedPlayerMove() {
   if (pendingBotMove || game.turn() !== "w" || game.game_over()) return null;
   return await chooseBotMove();
