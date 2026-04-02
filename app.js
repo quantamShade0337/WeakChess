@@ -264,8 +264,8 @@ async function maybeBotMove() {
   setActionAvailability();
 }
 
-function afterMove(move, byBot = false) {
-updateInsight(move);
+function afterMove(move, byBot = false, engineScore = 0) {
+  updateInsight(move);
 
   // Update the Score Pill with the negative of the engine score
   // If engine says +100 (it is winning), pill shows -100 (player is losing)
