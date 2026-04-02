@@ -22,6 +22,7 @@ const pieceMap = {
   wp: "♙", wn: "♘", wb: "♗", wr: "♖", wq: "♕", wk: "♔",
   bp: "♟", bn: "♞", bb: "♝", br: "♜", bq: "♛", bk: "♚",
 };
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let selectedSquare = null;
 let legalTargets = [];
@@ -69,6 +70,61 @@ function squareName(row, col) {
 
 function legalMovesFrom(square) {
   return game.moves({ square, verbose: true });
+}
+
+function pieceSymbolFor(square) {
+  const piece = game.get(square);
+  return piece ? pieceMap[`${piece.color}${piece.type}`] : "";
+}
+
+function squareElement(square) {
+  return board.querySelector(`[data-square="${square}"]`);
+}
+
+function waitForTransition(node, fallback = 260) {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      node.removeEventListener("transitionend", finish);
+      resolve();
+    };
+    node.addEventListener("transitionend", finish, { once: true });
+    window.setTimeout(finish, fallback);
+  });
+}
+
+async function animateMove({ from, to, symbol }) {
+  if (!symbol || prefersReducedMotion.matches) return;
+
+  const fromSquare = squareElement(from);
+  const toSquare = squareElement(to);
+  if (!fromSquare || !toSquare) return;
+
+  const fromRect = fromSquare.getBoundingClientRect();
+  const toRect = toSquare.getBoundingClientRect();
+  const destinationPiece = toSquare.querySelector(".piece");
+
+  if (destinationPiece) destinationPiece.classList.add("piece--hidden");
+
+  const ghost = document.createElement("span");
+  ghost.className = "piece piece--moving";
+  ghost.textContent = symbol;
+  ghost.style.left = `${fromRect.left}px`;
+  ghost.style.top = `${fromRect.top}px`;
+  ghost.style.width = `${fromRect.width}px`;
+  ghost.style.height = `${fromRect.height}px`;
+  ghost.style.transform = "translate3d(0, 0, 0)";
+  document.body.appendChild(ghost);
+
+  requestAnimationFrame(() => {
+    ghost.style.transform = `translate3d(${toRect.left - fromRect.left}px, ${toRect.top - fromRect.top}px, 0)`;
+  });
+
+  await waitForTransition(ghost, 320);
+  ghost.remove();
+  if (destinationPiece) destinationPiece.classList.remove("piece--hidden");
 }
 
 function clearSelection() {
@@ -162,7 +218,9 @@ function buildBoard() {
       const square = document.createElement("button");
       square.className = `square ${isLight ? "square--light" : "square--dark"}`;
       square.type = "button";
+      square.dataset.square = name;
       square.setAttribute("aria-label", `Square ${name}`);
+      const pieceAtSquare = game.get(name);
 
       if (game.turn() !== "w" || pendingBotMove) square.disabled = true;
 
@@ -170,10 +228,11 @@ function buildBoard() {
       const lastMove = history[history.length - 1];
       if (lastMove && [lastMove.from, lastMove.to].includes(name)) square.classList.add("square--last");
       if (name === selectedSquare) square.classList.add("square--selected");
-      if (legalTargets.includes(name)) square.classList.add("square--legal");
+      if (legalTargets.includes(name)) {
+        square.classList.add("square--legal");
+        if (pieceAtSquare) square.classList.add("square--legal-capture");
+      }
       if (name === hintSquare) square.classList.add("square--hint");
-
-      const pieceAtSquare = game.get(name);
       if (piece) {
         if (pieceAtSquare?.color === "w" && game.turn() === "w" && !pendingBotMove) {
           square.classList.add("square--piece");
@@ -207,6 +266,31 @@ function buildBoard() {
 
 const API_URL = "https://weakserver-production.up.railway.app"; 
 
+function fallbackBotMove() {
+  const moves = game.moves({ verbose: true });
+  if (!moves.length) return null;
+
+  const scored = moves
+    .map((move) => {
+      let score = 0;
+      if (move.san.includes("#")) score += 1000;
+      if (move.san.includes("+")) score += 120;
+      if (move.captured === "q") score += 90;
+      else if (move.captured) score += 45;
+      if (move.flags.includes("k") || move.flags.includes("q")) score += 35;
+      if (["e4", "d4", "e5", "d5", "c4", "c5", "f4", "f5"].includes(move.to)) score += 18;
+      if (["n", "b"].includes(move.piece)) score += 10;
+      score += Math.random() * 4;
+      return { move, score };
+    })
+    .sort((left, right) => right.score - left.score);
+
+  const best = scored[0]?.move;
+  return best
+    ? { from: best.from, to: best.to, promotion: best.promotion || "q" }
+    : null;
+}
+
 async function chooseBotMove() {
   if (game.game_over()) return null;
 
@@ -230,18 +314,26 @@ async function chooseBotMove() {
     
     const data = await res.json();
 
-    if (!data.bestmove) return null;
+    if (!data.bestmove) return fallbackBotMove();
 
-    return {
+    const candidate = {
       from: data.bestmove.slice(0, 2),
       to: data.bestmove.slice(2, 4),
       promotion: data.bestmove[4] || "q"
     };
 
+    const isLegal = game.moves({ verbose: true }).some((move) =>
+      move.from === candidate.from &&
+      move.to === candidate.to &&
+      (candidate.promotion ? (move.promotion || "q") === candidate.promotion : true)
+    );
+
+    return isLegal ? candidate : fallbackBotMove();
+
   } catch (err) {
     console.error("Fetch error:", err);
-    showToast("Engine connection failed");
-    return null;
+    showToast("Engine offline. Local move.");
+    return fallbackBotMove();
   }
 }
 
@@ -255,8 +347,9 @@ async function maybeBotMove() {
   const botMoveData = await chooseBotMove();
 
   if (botMoveData) {
+    const movingSymbol = pieceSymbolFor(botMoveData.from);
     const move = game.move(botMoveData);
-    if (move) afterMove(move, true);
+    if (move) await afterMove(move, true, movingSymbol);
   }
 
   pendingBotMove = null;
@@ -264,7 +357,7 @@ async function maybeBotMove() {
   setActionAvailability();
 }
 
-function afterMove(move, byBot = false) {
+async function afterMove(move, byBot = false, movingSymbol = pieceSymbolFor(move.to)) {
   updateInsight(move);
 
   if (game.in_checkmate()) {
@@ -276,6 +369,7 @@ function afterMove(move, byBot = false) {
     speak(byBot ? "Checkmate. Again?" : "Checkmate.");
     clearSelection();
     buildBoard();
+    await animateMove({ from: move.from, to: move.to, symbol: movingSymbol });
     setActionAvailability();
     return;
   }
@@ -288,6 +382,7 @@ function afterMove(move, byBot = false) {
     speak("Draw.");
     clearSelection();
     buildBoard();
+    await animateMove({ from: move.from, to: move.to, symbol: movingSymbol });
     setActionAvailability();
     return;
   }
@@ -309,18 +404,20 @@ function afterMove(move, byBot = false) {
   }
 
   buildBoard();
+  await animateMove({ from: move.from, to: move.to, symbol: movingSymbol });
   setActionAvailability();
 }
 
-function attemptMove(from, to) {
+async function attemptMove(from, to) {
+  const movingSymbol = pieceSymbolFor(from);
   const move = game.move({ from, to, promotion: "q" });
   if (!move) {
     speak("That move doesn't work from here. Try one of the glowing squares.");
     return;
   }
   clearSelection();
-  afterMove(move, false);
-  maybeBotMove();
+  await afterMove(move, false, movingSymbol);
+  await maybeBotMove();
 }
 
 async function suggestedPlayerMove() {
@@ -329,10 +426,7 @@ async function suggestedPlayerMove() {
 }
 
 function resetGame() {
-  if (pendingBotMove) {
-    clearTimeout(pendingBotMove);
-    pendingBotMove = null;
-  }
+  pendingBotMove = null;
   game.reset();
   clearSelection();
   updateInsight();
@@ -383,10 +477,7 @@ document.getElementById("undoBtn")?.addEventListener("click", () => {
     speak("Nothing to undo.");
     return;
   }
-  if (pendingBotMove) {
-    clearTimeout(pendingBotMove);
-    pendingBotMove = null;
-  }
+  pendingBotMove = null;
   game.undo();
   if (game.turn() === "b" && game.history().length) game.undo();
   clearSelection();

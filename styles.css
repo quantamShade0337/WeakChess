@@ -274,7 +274,8 @@ h3 {
   font-size: clamp(26px, 4vw, 42px);
   line-height: 1;
   user-select: none;
-  transition: transform var(--micro) var(--ease), box-shadow var(--micro) var(--ease), background var(--standard) var(--ease);
+  overflow: hidden;
+  transition: transform var(--micro) var(--ease), box-shadow var(--micro) var(--ease);
 }
 
 .square--light {
@@ -295,11 +296,22 @@ h3 {
 
 .square--legal::after {
   content: "";
+  position: absolute;
   width: 28%;
   height: 28%;
   border-radius: 999px;
   background: var(--board-legal);
   box-shadow: 0 0 0 8px rgba(141, 160, 123, 0.12);
+  z-index: 1;
+}
+
+.square--legal-capture::after {
+  inset: 10%;
+  width: auto;
+  height: auto;
+  background: transparent;
+  border: 4px solid rgba(141, 160, 123, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(255, 249, 241, 0.48);
 }
 
 .square--piece {
@@ -323,7 +335,24 @@ h3 {
 }
 
 .piece {
+  position: relative;
+  z-index: 2;
   filter: drop-shadow(0 5px 6px rgba(45, 24, 8, 0.14));
+}
+
+.piece--hidden {
+  opacity: 0;
+}
+
+.piece--moving {
+  position: fixed;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-size: clamp(26px, 4vw, 42px);
+  line-height: 1;
+  transition: transform var(--emphasis) var(--ease);
 }
 
 .mascot-bubble,
