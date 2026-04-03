@@ -28,7 +28,7 @@ const pieceMap = {
   bp: "♟", bn: "♞", bb: "♝", br: "♜", bq: "♛", bk: "♚",
 };
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-const INITIAL_TIME_MS = 10 * 60 * 1000;
+const INITIAL_TIME_MS = 3 * 60 * 1000;
 
 let selectedSquare = null;
 let legalTargets = [];
@@ -39,8 +39,8 @@ let greatMoves = 4;
 let gamesPlayed = 12;
 let whiteTimeMs = INITIAL_TIME_MS;
 let blackTimeMs = INITIAL_TIME_MS;
-let whiteIncrement = 0;
-let blackIncrement = 0;
+let whiteIncrement = 2000;
+let blackIncrement = 2000;
 let clockInterval = null;
 let lastClockTick = 0;
 let timeoutWinner = null;
@@ -141,14 +141,14 @@ function tickClock() {
   lastClockTick = now;
 
   if (game.turn() === "w") {
-    whiteTimeMs = Math.max(0, whiteTimeMs - elapsed);
+    whiteTimeMs = Math.max(0, whiteTimeMs - elapsed + whiteIncrement);
     if (whiteTimeMs === 0) {
       renderClocks();
       handleTimeout("b");
       return;
     }
   } else {
-    blackTimeMs = Math.max(0, blackTimeMs - elapsed);
+    blackTimeMs = Math.max(0, blackTimeMs - elapsed + blackIncrementIncrement);
     if (blackTimeMs === 0) {
       renderClocks();
       handleTimeout("w");
