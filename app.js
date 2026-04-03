@@ -326,7 +326,7 @@ function setActionAvailability() {
   makeMoveBtn.disabled = disabled;
   if (pendingBotMove) makeMoveBtn.textContent = "Thinking...";
   else if (isFinished()) makeMoveBtn.textContent = "Game finished";
-  else makeMoveBtn.textContent = "Suggested move";
+  else makeMoveBtn.textContent = "Best move";
 }
 
 function buildBoard() {
