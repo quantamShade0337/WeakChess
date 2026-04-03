@@ -433,8 +433,8 @@ async function chooseBotMove(hint_mode = false) {
       body: JSON.stringify({
         startfen: "startpos",
         ucimoves: moves,
-        wtime: hint_mode ? 10000 : whiteTimeMs,
-        btime: hint_mode ? 10000 : blackTimeMs,
+        wtime: hint_mode ? 2000 : whiteTimeMs,
+        btime: hint_mode ? 2000 : blackTimeMs,
         winc: hint_mode ? 0 : whiteIncrement,
         binc: hint_mode ? 0 : blackIncrement
       })
