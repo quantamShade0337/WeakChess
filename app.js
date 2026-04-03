@@ -568,7 +568,7 @@ async function attemptMove(from, to) {
 
 async function suggestedPlayerMove() {
   if (pendingBotMove || game.turn() !== "w" || isFinished()) return null;
-  return await chooseBotMove(hint_mode=true);
+  return await chooseBotMove(true);
 }
 
 function resetGame() {
