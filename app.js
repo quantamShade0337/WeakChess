@@ -417,7 +417,7 @@ function fallbackBotMove() {
     : null;
 }
 
-async function chooseBotMove() {
+async function chooseBotMove(hint_mode = false) {
   if (isFinished()) return null;
 
   // Map moves to UCI strings (e.g., "e2e4")
@@ -433,10 +433,10 @@ async function chooseBotMove() {
       body: JSON.stringify({
         startfen: "startpos",
         ucimoves: moves,
-        wtime: whiteTimeMs,
-        btime: blackTimeMs,
-        winc: whiteIncrement,
-        binc: blackIncrement
+        wtime: hint_mode ? 10000 : whiteTimeMs,
+        btime: hint_mode ? 10000 : blackTimeMs,
+        winc: hint_mode ? 0 : whiteIncrement,
+        binc: hint_mode ? 0 : blackIncrement
       })
     });
 
@@ -568,7 +568,7 @@ async function attemptMove(from, to) {
 
 async function suggestedPlayerMove() {
   if (pendingBotMove || game.turn() !== "w" || isFinished()) return null;
-  return await chooseBotMove();
+  return await chooseBotMove(hint_mode=true);
 }
 
 function resetGame() {
