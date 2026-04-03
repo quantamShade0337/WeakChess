@@ -141,14 +141,14 @@ function tickClock() {
   lastClockTick = now;
 
   if (game.turn() === "w") {
-    whiteTimeMs = Math.max(0, whiteTimeMs - elapsed + whiteIncrement);
+    whiteTimeMs = Math.max(0, whiteTimeMs - elapsed);
     if (whiteTimeMs === 0) {
       renderClocks();
       handleTimeout("b");
       return;
     }
   } else {
-    blackTimeMs = Math.max(0, blackTimeMs - elapsed + blackIncrementIncrement);
+    blackTimeMs = Math.max(0, blackTimeMs - elapsed);
     if (blackTimeMs === 0) {
       renderClocks();
       handleTimeout("w");
@@ -494,6 +494,11 @@ async function maybeBotMove() {
 }
 
 async function afterMove(move, byBot = false, movingSymbol = pieceSymbolFor(move.to)) {
+
+  // Prev move was black
+  if (game.turn() === 'w')  blackTimeMs += blackIncrement;
+  if (game.turn() === 'b')  whiteTimeMs += whiteIncrement;
+
   updateInsight(move);
 
   if (game.in_checkmate()) {
