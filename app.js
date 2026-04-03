@@ -39,6 +39,8 @@ let greatMoves = 4;
 let gamesPlayed = 12;
 let whiteTimeMs = INITIAL_TIME_MS;
 let blackTimeMs = INITIAL_TIME_MS;
+let whiteIncrement = 0;
+let blackIncrement = 0;
 let clockInterval = null;
 let lastClockTick = 0;
 let timeoutWinner = null;
@@ -430,7 +432,11 @@ async function chooseBotMove() {
       },
       body: JSON.stringify({
         startfen: "startpos",
-        ucimoves: moves
+        ucimoves: moves,
+        wtime: whiteTimeMs,
+        btime: blackTimeMs,
+        winc: whiteIncrement,
+        binc: blackIncrement
       })
     });
 
